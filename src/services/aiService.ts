@@ -14,6 +14,12 @@ export const sendMessageToAI = async (
       return sendToOpenAI(messages, apiKey);
     case "gemini":
       return sendToGemini(messages, apiKey);
+    case "claude":
+      return sendToAnthropic(messages, apiKey);
+    case "perplexity":
+      return sendToPerplexity(messages, apiKey);
+    case "cohere":
+      return sendToCohere(messages, apiKey);
     case "lovable":
       return sendToLovable(messages);
     default:
@@ -103,6 +109,129 @@ const sendToGemini = async (messages: Message[], apiKey?: string): Promise<strin
     return data.candidates[0].content.parts[0].text;
   } catch (error) {
     console.error("Erro ao chamar a API do Gemini:", error);
+    throw error;
+  }
+};
+
+// Anthropic / Claude
+const sendToAnthropic = async (messages: Message[], apiKey?: string): Promise<string> => {
+  if (!apiKey) {
+    console.warn("Chave da API Claude não fornecida, usando resposta simulada");
+    return simulateResponse("Claude");
+  }
+
+  try {
+    // Converter mensagens para o formato do Claude
+    const formattedMessages = messages.map(msg => ({
+      role: msg.role,
+      content: msg.content
+    }));
+
+    const response = await fetch(API_CONFIG.anthropic.apiUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": apiKey,
+        "anthropic-version": "2023-06-01"
+      },
+      body: JSON.stringify({
+        model: API_CONFIG.anthropic.model,
+        messages: formattedMessages,
+        max_tokens: 1024,
+        temperature: 0.7
+      })
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error?.message || "Erro na API da Anthropic");
+    }
+
+    const data = await response.json();
+    return data.content[0].text;
+  } catch (error) {
+    console.error("Erro ao chamar a API da Anthropic:", error);
+    throw error;
+  }
+};
+
+// Perplexity
+const sendToPerplexity = async (messages: Message[], apiKey?: string): Promise<string> => {
+  if (!apiKey) {
+    console.warn("Chave da API Perplexity não fornecida, usando resposta simulada");
+    return simulateResponse("Perplexity");
+  }
+
+  try {
+    const formattedMessages = messages.map(msg => ({
+      role: msg.role,
+      content: msg.content
+    }));
+
+    const response = await fetch(API_CONFIG.perplexity.apiUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${apiKey}`
+      },
+      body: JSON.stringify({
+        model: API_CONFIG.perplexity.model,
+        messages: formattedMessages,
+        temperature: 0.2,
+        max_tokens: 1000
+      })
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error?.message || "Erro na API da Perplexity");
+    }
+
+    const data = await response.json();
+    return data.choices[0].message.content;
+  } catch (error) {
+    console.error("Erro ao chamar a API da Perplexity:", error);
+    throw error;
+  }
+};
+
+// Cohere
+const sendToCohere = async (messages: Message[], apiKey?: string): Promise<string> => {
+  if (!apiKey) {
+    console.warn("Chave da API Cohere não fornecida, usando resposta simulada");
+    return simulateResponse("Cohere");
+  }
+
+  try {
+    // Converter mensagens para o formato do Cohere
+    const formattedMessages = messages.map(msg => ({
+      role: msg.role,
+      message: msg.content
+    }));
+
+    const response = await fetch(API_CONFIG.cohere.apiUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${apiKey}`
+      },
+      body: JSON.stringify({
+        model: API_CONFIG.cohere.model,
+        chat_history: formattedMessages.slice(0, -1),
+        message: formattedMessages[formattedMessages.length - 1].message,
+        temperature: 0.7
+      })
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error?.message || "Erro na API da Cohere");
+    }
+
+    const data = await response.json();
+    return data.text;
+  } catch (error) {
+    console.error("Erro ao chamar a API da Cohere:", error);
     throw error;
   }
 };

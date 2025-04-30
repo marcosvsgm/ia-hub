@@ -8,10 +8,14 @@ import { Search, Settings, Key } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface ApiKeys {
   gpt?: string;
   gemini?: string;
+  claude?: string;
+  perplexity?: string;
+  cohere?: string;
   [key: string]: string | undefined;
 }
 
@@ -32,12 +36,24 @@ const AIModelSelector = ({
   const [apiDialogOpen, setApiDialogOpen] = useState(false);
   const [currentModelId, setCurrentModelId] = useState<string>("");
   const [apiKeyInput, setApiKeyInput] = useState<string>("");
+  const [modelFilterProvider, setModelFilterProvider] = useState<string>("todos");
 
+  const providers = ["todos", ...Array.from(new Set(availableModels.map(model => model.provider.toLowerCase())))];
+
+  // Filtra modelos por termo de busca e provedor
   const filteredModels = availableModels.filter(
-    (model) =>
-      model.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      model.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      model.capabilities.some((cap) => cap.toLowerCase().includes(searchTerm.toLowerCase()))
+    (model) => {
+      const matchesSearch = 
+        model.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        model.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        model.capabilities.some((cap) => cap.toLowerCase().includes(searchTerm.toLowerCase()));
+      
+      const matchesProvider = 
+        modelFilterProvider === "todos" || 
+        model.provider.toLowerCase() === modelFilterProvider;
+      
+      return matchesSearch && matchesProvider;
+    }
   );
 
   const handleOpenApiDialog = (modelId: string) => {
@@ -53,6 +69,16 @@ const AIModelSelector = ({
     }
   };
 
+  // Verifica se um modelo requer API key
+  const requiresApiKey = (modelId: string) => {
+    return modelId !== "lovable";
+  };
+
+  // Verifica se o modelo possui uma API key configurada
+  const hasApiKey = (modelId: string) => {
+    return apiKeys[modelId] && apiKeys[modelId]!.length > 0;
+  };
+
   return (
     <div className="w-full md:w-[350px] p-4 border-r border-border">
       <div className="mb-4">
@@ -61,19 +87,34 @@ const AIModelSelector = ({
           Selecione um modelo para começar a conversar
         </p>
 
-        <div className="relative mb-4">
-          <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-          <input
-            type="text"
-            placeholder="Buscar modelos..."
-            className="w-full pl-10 py-2 bg-background border rounded-md"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
+        <div className="flex gap-2 mb-4">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+            <input
+              type="text"
+              placeholder="Buscar modelos..."
+              className="w-full pl-10 py-2 bg-background border rounded-md"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+          
+          <Select value={modelFilterProvider} onValueChange={setModelFilterProvider}>
+            <SelectTrigger className="w-[120px]">
+              <SelectValue placeholder="Provedor" />
+            </SelectTrigger>
+            <SelectContent>
+              {providers.map((provider) => (
+                <SelectItem key={provider} value={provider}>
+                  {provider.charAt(0).toUpperCase() + provider.slice(1)}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
       </div>
 
-      <div className="space-y-4">
+      <div className="space-y-4 max-h-[calc(100vh-220px)] overflow-y-auto pr-1">
         {filteredModels.map((model) => (
           <Card
             key={model.id}
@@ -106,7 +147,7 @@ const AIModelSelector = ({
                 </div>
                 
                 {/* Apenas mostra ícone de chave para modelos que requerem API key */}
-                {(model.id === "gpt" || model.id === "gemini") && (
+                {requiresApiKey(model.id) && (
                   <Button 
                     variant="ghost" 
                     size="icon" 
@@ -116,7 +157,7 @@ const AIModelSelector = ({
                       handleOpenApiDialog(model.id);
                     }}
                   >
-                    <Key className={`h-4 w-4 ${apiKeys[model.id] ? "text-green-500" : "text-muted-foreground"}`} />
+                    <Key className={`h-4 w-4 ${hasApiKey(model.id) ? "text-green-500" : "text-muted-foreground"}`} />
                   </Button>
                 )}
               </div>
@@ -139,12 +180,13 @@ const AIModelSelector = ({
               </div>
               
               <Button 
-                variant="secondary" 
+                variant={selectedModel?.id === model.id ? "default" : "secondary"}
                 size="sm" 
                 className="ml-auto" 
                 onClick={() => onSelectModel(model)}
+                disabled={requiresApiKey(model.id) && !hasApiKey(model.id)}
               >
-                Selecionar
+                {selectedModel?.id === model.id ? "Selecionado" : "Selecionar"}
               </Button>
             </CardFooter>
           </Card>

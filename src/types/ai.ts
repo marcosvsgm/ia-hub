@@ -36,6 +36,30 @@ export const availableModels: AIModel[] = [
     provider: "Google"
   },
   {
+    id: "claude",
+    name: "Claude",
+    description: "Assistente AI da Anthropic, equilibrando utilidade com segurança",
+    avatar: "https://cdn.worldvectorlogo.com/logos/anthropic-claude.svg",
+    capabilities: ["Processamento de textos longos", "Raciocínio nuançado", "Conteúdo criativo"],
+    provider: "Anthropic"
+  },
+  {
+    id: "perplexity",
+    name: "Perplexity",
+    description: "Modelo baseado em Llama com busca online integrada",
+    avatar: "https://avatars.githubusercontent.com/u/83116884",
+    capabilities: ["Pesquisa em tempo real", "Citação de fontes", "Respostas baseadas em dados recentes"],
+    provider: "Perplexity AI"
+  },
+  {
+    id: "cohere",
+    name: "Cohere",
+    description: "Modelo focado em entendimento semântico e geração de texto natural",
+    avatar: "https://seeklogo.com/images/C/cohere-logo-27E0B95343-seeklogo.com.png",
+    capabilities: ["Análise semântica", "Classificação de texto", "Moderação de conteúdo"],
+    provider: "Cohere"
+  },
+  {
     id: "lovable",
     name: "Lovable",
     description: "Assistente especializado em desenvolvimento web e UI/UX",

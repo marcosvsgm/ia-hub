@@ -20,6 +20,15 @@ const Index = () => {
   const [geminiKey, setGeminiKey] = useState<string>(
     localStorage.getItem("gemini_api_key") || ""
   );
+  const [claudeKey, setClaudeKey] = useState<string>(
+    localStorage.getItem("claude_api_key") || ""
+  );
+  const [perplexityKey, setPerplexityKey] = useState<string>(
+    localStorage.getItem("perplexity_api_key") || ""
+  );
+  const [cohereKey, setCohereKey] = useState<string>(
+    localStorage.getItem("cohere_api_key") || ""
+  );
 
   const handleModelSelect = (model: AIModel) => {
     setSelectedModel(model);
@@ -51,6 +60,12 @@ const Index = () => {
         apiKey = openaiKey;
       } else if (selectedModel.id === "gemini") {
         apiKey = geminiKey;
+      } else if (selectedModel.id === "claude") {
+        apiKey = claudeKey;
+      } else if (selectedModel.id === "perplexity") {
+        apiKey = perplexityKey;
+      } else if (selectedModel.id === "cohere") {
+        apiKey = cohereKey;
       }
 
       // Envia a mensagem para a API
@@ -88,6 +103,15 @@ const Index = () => {
     } else if (modelId === "gemini") {
       setGeminiKey(apiKey);
       localStorage.setItem("gemini_api_key", apiKey);
+    } else if (modelId === "claude") {
+      setClaudeKey(apiKey);
+      localStorage.setItem("claude_api_key", apiKey);
+    } else if (modelId === "perplexity") {
+      setPerplexityKey(apiKey);
+      localStorage.setItem("perplexity_api_key", apiKey);
+    } else if (modelId === "cohere") {
+      setCohereKey(apiKey);
+      localStorage.setItem("cohere_api_key", apiKey);
     }
     
     toast({
@@ -106,7 +130,10 @@ const Index = () => {
             onApiKeyChange={handleApiKeyChange}
             apiKeys={{
               gpt: openaiKey,
-              gemini: geminiKey
+              gemini: geminiKey,
+              claude: claudeKey,
+              perplexity: perplexityKey,
+              cohere: cohereKey
             }}
           />
           <div className="flex-1 p-4">
