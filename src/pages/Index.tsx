@@ -5,12 +5,21 @@ import MainLayout from "@/components/layouts/MainLayout";
 import AIModelSelector from "@/components/AIModelSelector";
 import ChatInterface from "@/components/ChatInterface";
 import { AIModel, Message } from "@/types/ai";
+import { sendMessageToAI } from "@/services/aiService";
 
 const Index = () => {
   const { toast } = useToast();
   const [selectedModel, setSelectedModel] = useState<AIModel | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(false);
+  
+  // Estado para armazenar chaves de API
+  const [openaiKey, setOpenaiKey] = useState<string>(
+    localStorage.getItem("openai_api_key") || ""
+  );
+  const [geminiKey, setGeminiKey] = useState<string>(
+    localStorage.getItem("gemini_api_key") || ""
+  );
 
   const handleModelSelect = (model: AIModel) => {
     setSelectedModel(model);
@@ -36,11 +45,20 @@ const Index = () => {
     setLoading(true);
 
     try {
-      // Simulate AI response (in a real app, this would call an API)
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      
-      const responseContent = `Esta é uma resposta simulada do ${selectedModel.name}. 
-      Em uma implementação real, este seria um retorno da API do modelo selecionado.`;
+      // Escolhe a chave de API correta
+      let apiKey = "";
+      if (selectedModel.id === "gpt") {
+        apiKey = openaiKey;
+      } else if (selectedModel.id === "gemini") {
+        apiKey = geminiKey;
+      }
+
+      // Envia a mensagem para a API
+      const responseContent = await sendMessageToAI(
+        selectedModel,
+        [...messages, userMessage],
+        apiKey
+      );
       
       const aiMessage: Message = {
         id: (Date.now() + 1).toString(),
@@ -54,7 +72,7 @@ const Index = () => {
     } catch (error) {
       toast({
         title: "Erro",
-        description: "Ocorreu um erro ao processar sua mensagem",
+        description: error instanceof Error ? error.message : "Ocorreu um erro ao processar sua mensagem",
         variant: "destructive",
       });
       console.error("Error sending message:", error);
@@ -63,13 +81,33 @@ const Index = () => {
     }
   };
 
+  const handleApiKeyChange = (modelId: string, apiKey: string) => {
+    if (modelId === "gpt") {
+      setOpenaiKey(apiKey);
+      localStorage.setItem("openai_api_key", apiKey);
+    } else if (modelId === "gemini") {
+      setGeminiKey(apiKey);
+      localStorage.setItem("gemini_api_key", apiKey);
+    }
+    
+    toast({
+      title: "Chave de API salva",
+      description: `A chave de API para ${modelId} foi salva no navegador.`,
+    });
+  };
+
   return (
     <MainLayout>
       <div className="flex flex-col h-screen">
         <div className="flex-1 flex flex-col md:flex-row">
           <AIModelSelector 
             selectedModel={selectedModel} 
-            onSelectModel={handleModelSelect} 
+            onSelectModel={handleModelSelect}
+            onApiKeyChange={handleApiKeyChange}
+            apiKeys={{
+              gpt: openaiKey,
+              gemini: geminiKey
+            }}
           />
           <div className="flex-1 p-4">
             <ChatInterface
