@@ -1,6 +1,6 @@
 
 import { ReactNode } from "react";
-import { Brain, History, HelpCircle } from "lucide-react";
+import { Brain, History, HelpCircle, Settings } from "lucide-react";
 import { Link } from "react-router-dom";
 
 interface MainLayoutProps {
@@ -34,6 +34,13 @@ const MainLayout = ({ children }: MainLayoutProps) => {
             >
               <HelpCircle className="h-4 w-4" />
               Ajuda
+            </Link>
+            <Link
+              to="/admin"
+              className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1"
+            >
+              <Settings className="h-4 w-4" />
+              Admin
             </Link>
           </nav>
         </div>
