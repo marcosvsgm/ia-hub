@@ -1,73 +1,85 @@
-# Welcome to your Lovable project
 
-## Project info
+# IA Hub - Plataforma Generativa
 
-**URL**: https://lovable.dev/projects/6aef4626-8c98-4acb-b859-d5a5494c7e08
+## Sobre o projeto
 
-## How can I edit this code?
+IA Hub é uma plataforma generativa que permite interagir com múltiplos modelos de IA, incluindo:
+- OpenAI (GPT)
+- Google (Gemini)
+- Anthropic (Claude)
+- Perplexity
+- Cohere
 
-There are several ways of editing your application.
+## Como executar localmente
 
-**Use Lovable**
+Para executar o projeto em seu ambiente local, siga estas etapas:
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/6aef4626-8c98-4acb-b859-d5a5494c7e08) and start prompting.
+### Pré-requisitos
 
-Changes made via Lovable will be committed automatically to this repo.
+- Node.js (versão 18 ou superior) - [instalar com nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+- NPM (normalmente instalado com o Node.js)
+- Um editor de código como VSCode (opcional)
 
-**Use your preferred IDE**
+### Passos para instalação
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+```bash
+# 1. Clone o repositório
+git clone https://github.com/seu-usuario/ia-hub.git
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+# 2. Entre no diretório do projeto
+cd ia-hub
 
-Follow these steps:
+# 3. Instale as dependências
+npm install
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone [<YOUR_GIT_URL>](https://github.com/marcosvsgm/intelligent-prompt-lab.git)
-
-# Step 2: Navigate to the project directory.
-cd intelligent-prompt-lab
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
+# 4. Inicie o servidor de desenvolvimento
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+Após executar estes comandos, o projeto estará disponível em [http://localhost:8080](http://localhost:8080) no seu navegador.
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+### Configuração das APIs
 
-**Use GitHub Codespaces**
+Para utilizar os diferentes modelos de IA, você precisará configurar suas chaves de API:
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+1. Acesse a página inicial do IA Hub
+2. Clique no ícone de configuração ao lado do seletor de modelo
+3. Insira suas chaves de API para os serviços desejados
+4. As chaves serão salvas no armazenamento local do navegador
 
-## What technologies are used for this project?
+> **Nota:** As chaves de API são armazenadas apenas localmente no seu navegador e não são enviadas para nenhum servidor externo.
 
-This project is built with:
+## Tecnologias utilizadas
+
+Este projeto foi construído com:
 
 - Vite
 - TypeScript
 - React
-- shadcn-ui
+- React Router
 - Tailwind CSS
+- shadcn-ui
+- Tanstack Query
 
-## How can I deploy this project?
+## Estrutura do projeto
 
-Simply open [Lovable](https://lovable.dev/projects/6aef4626-8c98-4acb-b859-d5a5494c7e08) and click on Share -> Publish.
+```
+src/
+├── components/      # Componentes reutilizáveis
+├── config/          # Configurações do projeto
+├── pages/           # Páginas da aplicação
+├── services/        # Serviços para comunicação com APIs
+├── types/           # Definições de tipos TypeScript
+└── utils/           # Funções utilitárias
+```
 
-## Can I connect a custom domain to my Lovable project?
+## Funcionalidades
 
-Yes, you can!
+- Chat com múltiplos modelos de IA
+- Histórico de conversas
+- Página de ajuda com informações detalhadas
+- Configuração de chaves de API
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+## URL do projeto
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+[https://lovable.dev/projects/6aef4626-8c98-4acb-b859-d5a5494c7e08](https://lovable.dev/projects/6aef4626-8c98-4acb-b859-d5a5494c7e08)
