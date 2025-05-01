@@ -53,8 +53,18 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
 
+// Define the User type
+type UserType = {
+  id: number;
+  name: string;
+  email: string;
+  role: "user" | "admin";
+  status: "active" | "inactive";
+  lastLogin: string;
+};
+
 // Mock user data
-const mockUsers = [
+const mockUsers: UserType[] = [
   { id: 1, name: "João Silva", email: "joao@example.com", role: "user", status: "active", lastLogin: "2025-04-30" },
   { id: 2, name: "Maria Oliveira", email: "maria@example.com", role: "admin", status: "active", lastLogin: "2025-05-01" },
   { id: 3, name: "Pedro Souza", email: "pedro@example.com", role: "user", status: "inactive", lastLogin: "2025-04-15" },
@@ -75,9 +85,9 @@ const userFormSchema = z.object({
 type UserFormValues = z.infer<typeof userFormSchema>;
 
 const AdminUsers = () => {
-  const [users, setUsers] = useState(mockUsers);
+  const [users, setUsers] = useState<UserType[]>(mockUsers);
   const [searchQuery, setSearchQuery] = useState("");
-  const [currentUser, setCurrentUser] = useState<typeof mockUsers[0] | null>(null);
+  const [currentUser, setCurrentUser] = useState<UserType | null>(null);
   const { toast } = useToast();
   
   // Form
@@ -97,13 +107,13 @@ const AdminUsers = () => {
     user.email.toLowerCase().includes(searchQuery.toLowerCase())
   );
   
-  const handleEditUser = (user: typeof mockUsers[0]) => {
+  const handleEditUser = (user: UserType) => {
     setCurrentUser(user);
     form.reset({
       name: user.name,
       email: user.email,
-      role: user.role as "user" | "admin",
-      status: user.status as "active" | "inactive",
+      role: user.role,
+      status: user.status,
     });
   };
   
@@ -129,9 +139,12 @@ const AdminUsers = () => {
       });
     } else {
       // Add new user
-      const newUser = {
+      const newUser: UserType = {
         id: users.length + 1,
-        ...data,
+        name: data.name,
+        email: data.email,
+        role: data.role,
+        status: data.status,
         lastLogin: "-"
       };
       setUsers([...users, newUser]);
