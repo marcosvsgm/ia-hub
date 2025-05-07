@@ -1,7 +1,9 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
 import AdminLayout from "@/components/layouts/AdminLayout";
 import { Card } from "@/components/ui/card";
+import { getUsers, updateUser, deleteUser } from "@/services/userService";
 import {
   Table,
   TableBody,
@@ -48,31 +50,13 @@ import {
   Trash2, 
   User 
 } from "lucide-react";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
+import { Database } from "@/types/database";
 import * as z from "zod";
 
-// Define the User type
-type UserType = {
-  id: number;
-  name: string;
-  email: string;
-  role: "user" | "admin";
-  status: "active" | "inactive";
-  lastLogin: string;
-};
-
-// Mock user data
-const mockUsers: UserType[] = [
-  { id: 1, name: "João Silva", email: "joao@example.com", role: "user", status: "active", lastLogin: "2025-04-30" },
-  { id: 2, name: "Maria Oliveira", email: "maria@example.com", role: "admin", status: "active", lastLogin: "2025-05-01" },
-  { id: 3, name: "Pedro Souza", email: "pedro@example.com", role: "user", status: "inactive", lastLogin: "2025-04-15" },
-  { id: 4, name: "Ana Santos", email: "ana@example.com", role: "user", status: "active", lastLogin: "2025-04-29" },
-  { id: 5, name: "Carlos Ferreira", email: "carlos@example.com", role: "user", status: "active", lastLogin: "2025-04-28" },
-  { id: 6, name: "Lúcia Ribeiro", email: "lucia@example.com", role: "user", status: "inactive", lastLogin: "2025-04-20" },
-  { id: 7, name: "Roberto Almeida", email: "roberto@example.com", role: "user", status: "active", lastLogin: "2025-04-29" },
-];
+type UserType = Database['public']['Tables']['users']['Row'];
 
 // Form schema
 const userFormSchema = z.object({
@@ -85,10 +69,14 @@ const userFormSchema = z.object({
 type UserFormValues = z.infer<typeof userFormSchema>;
 
 const AdminUsers = () => {
-  const [users, setUsers] = useState<UserType[]>(mockUsers);
   const [searchQuery, setSearchQuery] = useState("");
   const [currentUser, setCurrentUser] = useState<UserType | null>(null);
   const { toast } = useToast();
+  
+  const { data: users = [], refetch } = useQuery({
+    queryKey: ['admin-users'],
+    queryFn: getUsers,
+  });
   
   // Form
   const form = useForm<UserFormValues>({
@@ -117,50 +105,49 @@ const AdminUsers = () => {
     });
   };
   
-  const handleDeleteUser = (userId: number) => {
-    setUsers(users.filter(user => user.id !== userId));
-    toast({
-      title: "Usuário removido",
-      description: "O usuário foi removido com sucesso."
-    });
-  };
-  
-  const onSubmit = (data: UserFormValues) => {
-    if (currentUser) {
-      // Edit existing user
-      setUsers(users.map(user => 
-        user.id === currentUser.id 
-          ? { ...user, ...data } 
-          : user
-      ));
+  const handleDeleteUser = async (userId: string) => {
+    try {
+      await deleteUser(userId);
+      await refetch();
       toast({
-        title: "Usuário atualizado",
-        description: "As informações do usuário foram atualizadas com sucesso."
+        title: "Usuário removido",
+        description: "O usuário foi removido com sucesso."
       });
-    } else {
-      // Add new user
-      const newUser: UserType = {
-        id: users.length + 1,
-        name: data.name,
-        email: data.email,
-        role: data.role,
-        status: data.status,
-        lastLogin: "-"
-      };
-      setUsers([...users, newUser]);
+    } catch (error) {
       toast({
-        title: "Usuário criado",
-        description: "O novo usuário foi criado com sucesso."
+        title: "Erro ao remover usuário",
+        description: error instanceof Error ? error.message : "Ocorreu um erro ao remover o usuário",
+        variant: "destructive",
       });
     }
-    
-    form.reset({
-      name: "",
-      email: "",
-      role: "user",
-      status: "active",
-    });
-    setCurrentUser(null);
+  };
+  
+  const onSubmit = async (data: UserFormValues) => {
+    try {
+      if (currentUser) {
+        // Edit existing user
+        await updateUser(currentUser.id, data);
+        await refetch();
+        toast({
+          title: "Usuário atualizado",
+          description: "As informações do usuário foram atualizadas com sucesso."
+        });
+      }
+      
+      form.reset({
+        name: "",
+        email: "",
+        role: "user",
+        status: "active",
+      });
+      setCurrentUser(null);
+    } catch (error) {
+      toast({
+        title: "Erro ao atualizar usuário",
+        description: error instanceof Error ? error.message : "Ocorreu um erro ao atualizar o usuário",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
@@ -339,11 +326,11 @@ const AdminUsers = () => {
                     </span>
                   </TableCell>
                   <TableCell>
-                    {user.lastLogin !== "-" ? (
+                    {user.last_login ? (
                       <HoverCard>
                         <HoverCardTrigger asChild>
                           <span className="cursor-help underline decoration-dotted underline-offset-2">
-                            {new Date(user.lastLogin).toLocaleDateString("pt-BR")}
+                            {new Date(user.last_login).toLocaleDateString("pt-BR")}
                           </span>
                         </HoverCardTrigger>
                         <HoverCardContent className="w-52">

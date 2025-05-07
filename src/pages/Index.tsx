@@ -1,38 +1,44 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
 import MainLayout from "@/components/layouts/MainLayout";
 import AIModelSelector from "@/components/AIModelSelector";
 import ChatInterface from "@/components/ChatInterface";
 import { AIModel, Message } from "@/types/ai";
 import { sendMessageToAI } from "@/services/aiService";
+import { createConversation, getMessages } from "@/services/conversationService";
+import { saveApiKey, getApiKeys, deleteApiKey } from "@/services/apiKeyService";
 
 const Index = () => {
   const { toast } = useToast();
+  const { user } = useAuth();
   const [selectedModel, setSelectedModel] = useState<AIModel | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(false);
+  const [currentConversationId, setCurrentConversationId] = useState<string | null>(null);
+  const [hasApiKeys, setHasApiKeys] = useState<Record<string, boolean>>({});
   
-  // Estado para armazenar chaves de API
-  const [openaiKey, setOpenaiKey] = useState<string>(
-    localStorage.getItem("openai_api_key") || ""
-  );
-  const [geminiKey, setGeminiKey] = useState<string>(
-    localStorage.getItem("gemini_api_key") || ""
-  );
-  const [claudeKey, setClaudeKey] = useState<string>(
-    localStorage.getItem("claude_api_key") || ""
-  );
-  const [perplexityKey, setPerplexityKey] = useState<string>(
-    localStorage.getItem("perplexity_api_key") || ""
-  );
-  const [cohereKey, setCohereKey] = useState<string>(
-    localStorage.getItem("cohere_api_key") || ""
-  );
+  // Fetch API keys status when user is loaded
+  useEffect(() => {
+    const fetchApiKeys = async () => {
+      if (user) {
+        try {
+          const keys = await getApiKeys(user.id);
+          setHasApiKeys(keys);
+        } catch (error) {
+          console.error("Error fetching API keys", error);
+        }
+      }
+    };
+    
+    fetchApiKeys();
+  }, [user]);
 
   const handleModelSelect = (model: AIModel) => {
     setSelectedModel(model);
     setMessages([]);
+    setCurrentConversationId(null);
     toast({
       title: `${model.name} selecionado`,
       description: `Agora você está conversando com ${model.name}`,
@@ -40,9 +46,9 @@ const Index = () => {
   };
 
   const handleSendMessage = async (content: string) => {
-    if (!content.trim() || !selectedModel) return;
+    if (!content.trim() || !selectedModel || !user) return;
 
-    // Add user message
+    // Add user message to the UI
     const userMessage: Message = {
       id: Date.now().toString(),
       role: "user",
@@ -54,27 +60,28 @@ const Index = () => {
     setLoading(true);
 
     try {
-      // Escolhe a chave de API correta
-      let apiKey = "";
-      if (selectedModel.id === "gpt") {
-        apiKey = openaiKey;
-      } else if (selectedModel.id === "gemini") {
-        apiKey = geminiKey;
-      } else if (selectedModel.id === "claude") {
-        apiKey = claudeKey;
-      } else if (selectedModel.id === "perplexity") {
-        apiKey = perplexityKey;
-      } else if (selectedModel.id === "cohere") {
-        apiKey = cohereKey;
+      // Create a new conversation if needed
+      let conversationId = currentConversationId;
+      if (!conversationId) {
+        const newConversation = await createConversation({
+          user_id: user.id,
+          title: content.substring(0, 30) + (content.length > 30 ? "..." : ""),
+          model_id: selectedModel.id,
+          provider: selectedModel.provider
+        });
+        conversationId = newConversation.id;
+        setCurrentConversationId(conversationId);
       }
 
-      // Envia a mensagem para a API
+      // Send message to AI
       const responseContent = await sendMessageToAI(
         selectedModel,
         [...messages, userMessage],
-        apiKey
+        conversationId,
+        user.id
       );
       
+      // Add AI response to UI
       const aiMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: "assistant",
@@ -96,28 +103,42 @@ const Index = () => {
     }
   };
 
-  const handleApiKeyChange = (modelId: string, apiKey: string) => {
-    if (modelId === "gpt") {
-      setOpenaiKey(apiKey);
-      localStorage.setItem("openai_api_key", apiKey);
-    } else if (modelId === "gemini") {
-      setGeminiKey(apiKey);
-      localStorage.setItem("gemini_api_key", apiKey);
-    } else if (modelId === "claude") {
-      setClaudeKey(apiKey);
-      localStorage.setItem("claude_api_key", apiKey);
-    } else if (modelId === "perplexity") {
-      setPerplexityKey(apiKey);
-      localStorage.setItem("perplexity_api_key", apiKey);
-    } else if (modelId === "cohere") {
-      setCohereKey(apiKey);
-      localStorage.setItem("cohere_api_key", apiKey);
-    }
+  const handleApiKeyChange = async (modelId: string, apiKey: string) => {
+    if (!user) return;
     
-    toast({
-      title: "Chave de API salva",
-      description: `A chave de API para ${modelId} foi salva no navegador.`,
-    });
+    try {
+      await saveApiKey(user.id, modelId, apiKey);
+      setHasApiKeys(prev => ({ ...prev, [modelId]: true }));
+      toast({
+        title: "Chave de API salva",
+        description: `A chave de API para ${modelId} foi salva com segurança.`,
+      });
+    } catch (error) {
+      toast({
+        title: "Erro ao salvar chave API",
+        description: error instanceof Error ? error.message : "Ocorreu um erro ao salvar sua chave de API",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDeleteApiKey = async (modelId: string) => {
+    if (!user) return;
+    
+    try {
+      await deleteApiKey(user.id, modelId);
+      setHasApiKeys(prev => ({ ...prev, [modelId]: false }));
+      toast({
+        title: "Chave de API removida",
+        description: `A chave de API para ${modelId} foi removida com sucesso.`,
+      });
+    } catch (error) {
+      toast({
+        title: "Erro ao remover chave API",
+        description: error instanceof Error ? error.message : "Ocorreu um erro ao remover sua chave de API",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
@@ -128,13 +149,8 @@ const Index = () => {
             selectedModel={selectedModel} 
             onSelectModel={handleModelSelect}
             onApiKeyChange={handleApiKeyChange}
-            apiKeys={{
-              gpt: openaiKey,
-              gemini: geminiKey,
-              claude: claudeKey,
-              perplexity: perplexityKey,
-              cohere: cohereKey
-            }}
+            onDeleteApiKey={handleDeleteApiKey}
+            apiKeys={hasApiKeys}
           />
           <div className="flex-1 p-4">
             <ChatInterface

@@ -1,0 +1,77 @@
+
+import { supabase } from '@/lib/supabase';
+import { Database } from '@/types/database';
+
+type ApiKey = Database['public']['Tables']['api_keys']['Row'];
+
+// Simple hash function (in production, use a more secure approach)
+const hashKey = (key: string): string => {
+  // This is a placeholder - in a real app, you'd use a proper hashing algorithm
+  // Never store API keys in plain text
+  return `hashed_${key.substring(0, 3)}...${key.substring(key.length - 3)}`;
+};
+
+export const saveApiKey = async (
+  userId: string,
+  provider: string,
+  key: string
+): Promise<void> => {
+  // First check if a key for this provider already exists
+  const { data: existingKey } = await supabase
+    .from('api_keys')
+    .select('id')
+    .eq('user_id', userId)
+    .eq('provider', provider)
+    .single();
+
+  if (existingKey) {
+    // Update existing key
+    const { error } = await supabase
+      .from('api_keys')
+      .update({ 
+        key_hash: hashKey(key),
+        created_at: new Date().toISOString()
+      })
+      .eq('id', existingKey.id);
+
+    if (error) throw error;
+  } else {
+    // Insert new key
+    const { error } = await supabase
+      .from('api_keys')
+      .insert({
+        user_id: userId,
+        provider,
+        key_hash: hashKey(key),
+        created_at: new Date().toISOString()
+      });
+
+    if (error) throw error;
+  }
+};
+
+export const getApiKeys = async (userId: string): Promise<Record<string, boolean>> => {
+  const { data, error } = await supabase
+    .from('api_keys')
+    .select('provider')
+    .eq('user_id', userId);
+
+  if (error) throw error;
+
+  const result: Record<string, boolean> = {};
+  data.forEach((item) => {
+    result[item.provider] = true;
+  });
+
+  return result;
+};
+
+export const deleteApiKey = async (userId: string, provider: string): Promise<void> => {
+  const { error } = await supabase
+    .from('api_keys')
+    .delete()
+    .eq('user_id', userId)
+    .eq('provider', provider);
+
+  if (error) throw error;
+};

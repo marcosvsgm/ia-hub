@@ -1,5 +1,8 @@
 
+import { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import AdminLayout from "@/components/layouts/AdminLayout";
+import { getDashboardStats } from "@/services/userService";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { 
@@ -9,45 +12,45 @@ import {
   BarChart,
   CartesianGrid, 
   Legend, 
-  Line, 
-  LineChart, 
   ResponsiveContainer, 
   Tooltip, 
   XAxis, 
   YAxis 
 } from "recharts";
 
-// Mock data
-const userGrowthData = [
-  { day: "Seg", users: 12 },
-  { day: "Ter", users: 19 },
-  { day: "Qua", users: 15 },
-  { day: "Qui", users: 27 },
-  { day: "Sex", users: 32 },
-  { day: "Sab", users: 21 },
-  { day: "Dom", users: 18 },
-];
-
-const userTimeData = [
-  { name: "0-5m", usuarios: 20 },
-  { name: "5-15m", usuarios: 35 },
-  { name: "15-30m", usuarios: 45 },
-  { name: "30-60m", usuarios: 30 },
-  { name: ">60m", usuarios: 15 },
-];
-
-const userModelData = [
-  { model: "GPT", usuarios: 42 },
-  { model: "Gemini", usuarios: 28 },
-  { model: "Claude", usuarios: 18 },
-  { model: "Perplexity", usuarios: 12 },
-  { model: "Cohere", usuarios: 8 },
-];
-
 const AdminDashboard = () => {
-  const totalUsers = 125;
-  const activeUsers = 78;
-  const averageSessionTime = "18.5";
+  const { data: stats, isLoading } = useQuery({
+    queryKey: ['dashboard-stats'],
+    queryFn: getDashboardStats,
+  });
+  
+  const [userGrowthData, setUserGrowthData] = useState<any[]>([]);
+  const [userModelData, setUserModelData] = useState<any[]>([]);
+  const [userTimeData] = useState([
+    { name: "0-5m", usuarios: 20 },
+    { name: "5-15m", usuarios: 35 },
+    { name: "15-30m", usuarios: 45 },
+    { name: "30-60m", usuarios: 30 },
+    { name: ">60m", usuarios: 15 },
+  ]);
+  
+  useEffect(() => {
+    if (stats) {
+      // Format user growth data
+      const growthData = Object.entries(stats.userGrowth).map(([day, count]) => ({
+        day,
+        users: count
+      }));
+      setUserGrowthData(growthData);
+      
+      // Format model usage data
+      const modelData = stats.modelUsage.map((item: any) => ({
+        model: item.model,
+        usuarios: item.count
+      }));
+      setUserModelData(modelData);
+    }
+  }, [stats]);
   
   const chartConfig = {
     users: { 
@@ -60,6 +63,10 @@ const AdminDashboard = () => {
     },
   };
   
+  if (isLoading) {
+    return <AdminLayout title="Dashboard">Carregando dados...</AdminLayout>;
+  }
+  
   return (
     <AdminLayout title="Dashboard">
       <div className="grid gap-4 md:grid-cols-3 mb-8">
@@ -68,7 +75,7 @@ const AdminDashboard = () => {
             <CardTitle className="text-sm font-medium text-muted-foreground">Total de Usuários</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{totalUsers}</div>
+            <div className="text-2xl font-bold">{stats?.totalUsers || 0}</div>
           </CardContent>
         </Card>
         
@@ -77,9 +84,9 @@ const AdminDashboard = () => {
             <CardTitle className="text-sm font-medium text-muted-foreground">Usuários Ativos</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{activeUsers}</div>
+            <div className="text-2xl font-bold">{stats?.activeUsers || 0}</div>
             <p className="text-xs text-muted-foreground">
-              {Math.round((activeUsers / totalUsers) * 100)}% do total
+              {stats && stats.totalUsers > 0 ? Math.round((stats.activeUsers / stats.totalUsers) * 100) : 0}% do total
             </p>
           </CardContent>
         </Card>
@@ -89,7 +96,7 @@ const AdminDashboard = () => {
             <CardTitle className="text-sm font-medium text-muted-foreground">Tempo Médio por Sessão</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{averageSessionTime} min</div>
+            <div className="text-2xl font-bold">{stats?.averageSessionTime || "0"} min</div>
           </CardContent>
         </Card>
       </div>
