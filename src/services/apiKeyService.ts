@@ -1,6 +1,7 @@
 
 import { supabase } from '@/lib/supabase';
 import { Database } from '@/types/database';
+import { ApiKeys } from '@/types/ai';
 
 type ApiKey = Database['public']['Tables']['api_keys']['Row'];
 
@@ -50,7 +51,7 @@ export const saveApiKey = async (
   }
 };
 
-export const getApiKeys = async (userId: string): Promise<Record<string, boolean>> => {
+export const getApiKeys = async (userId: string): Promise<ApiKeys> => {
   const { data, error } = await supabase
     .from('api_keys')
     .select('provider')
@@ -58,7 +59,7 @@ export const getApiKeys = async (userId: string): Promise<Record<string, boolean
 
   if (error) throw error;
 
-  const result: Record<string, boolean> = {};
+  const result: ApiKeys = {};
   data.forEach((item) => {
     result[item.provider] = true;
   });

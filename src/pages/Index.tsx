@@ -5,7 +5,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import MainLayout from "@/components/layouts/MainLayout";
 import AIModelSelector from "@/components/AIModelSelector";
 import ChatInterface from "@/components/ChatInterface";
-import { AIModel, Message } from "@/types/ai";
+import { AIModel, Message, ApiKeys } from "@/types/ai";
 import { sendMessageToAI } from "@/services/aiService";
 import { createConversation, getMessages } from "@/services/conversationService";
 import { saveApiKey, getApiKeys, deleteApiKey } from "@/services/apiKeyService";
@@ -17,7 +17,7 @@ const Index = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(false);
   const [currentConversationId, setCurrentConversationId] = useState<string | null>(null);
-  const [hasApiKeys, setHasApiKeys] = useState<Record<string, boolean>>({});
+  const [hasApiKeys, setHasApiKeys] = useState<ApiKeys>({});
   
   // Fetch API keys status when user is loaded
   useEffect(() => {

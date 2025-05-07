@@ -133,12 +133,9 @@ export const getDashboardStats = async () => {
   const totalSessions = statsData.reduce((sum, stat) => sum + (stat.session_count || 0), 0);
   const averageSessionTime = totalSessions > 0 ? (totalTime / totalSessions).toFixed(1) : "0.0";
 
-  // Model usage distribution
+  // Model usage distribution - using groupby option correctly
   const { data: modelData, error: modelError } = await supabase
-    .from('messages')
-    .select('model, count')
-    .not('model', 'is', null)
-    .group('model');
+    .rpc('count_messages_by_model');
 
   if (modelError) throw modelError;
 

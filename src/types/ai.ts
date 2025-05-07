@@ -18,6 +18,10 @@ export interface Message {
   model?: string;
 }
 
+export interface ApiKeys {
+  [provider: string]: string | boolean;
+}
+
 export const availableModels: AIModel[] = [
   {
     id: "gpt",

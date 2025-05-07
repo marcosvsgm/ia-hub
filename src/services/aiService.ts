@@ -53,9 +53,9 @@ export const sendMessageToAI = async (
       model: model.id
     });
 
-    // Update user stats
+    // Update user stats - Using an RPC function to increment values
     await updateUserStats(userId, {
-      messages_sent: supabase.rpc('increment', { x: 2 }), // increment by 2 (user + assistant)
+      messages_sent: 2, // increment by 2 (user + assistant)
       favorite_model: model.id
     });
 
