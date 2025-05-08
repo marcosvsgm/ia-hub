@@ -1,8 +1,30 @@
 
-import { supabase } from '@/lib/supabase';
+import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 import { Message, AIModel } from "@/types/ai";
 import { createMessage } from './conversationService';
 import { updateUserStats } from './userService';
+
+// Função de mock para simular respostas de AI quando o Supabase não está configurado
+const mockAIResponse = async (model: AIModel, messages: Message[]): Promise<string> => {
+  console.log(`Simulando resposta para o modelo ${model.id} (${model.provider})`);
+  const userMessage = messages[messages.length - 1].content;
+  
+  // Respostas simuladas para desenvolvimento
+  const responses = {
+    gpt: `Resposta simulada do ChatGPT para: "${userMessage}"`,
+    gemini: `Resposta simulada do Gemini para: "${userMessage}"`,
+    claude: `Resposta simulada do Claude para: "${userMessage}"`,
+    perplexity: `Resposta simulada do Perplexity para: "${userMessage}"`,
+    cohere: `Resposta simulada do Cohere para: "${userMessage}"`,
+    lovable: `Resposta simulada do Lovable para: "${userMessage}"`,
+  };
+  
+  // Atraso simulado
+  await new Promise(resolve => setTimeout(resolve, 1000));
+  
+  return responses[model.id as keyof typeof responses] || 
+    `Resposta simulada do modelo ${model.name} para: "${userMessage}"`;
+};
 
 // Function to send messages to AI models through Supabase Edge Functions
 export const sendMessageToAI = async (
@@ -12,6 +34,21 @@ export const sendMessageToAI = async (
   userId: string
 ): Promise<string> => {
   try {
+    // Se o Supabase não estiver configurado, use resposta simulada
+    if (!isSupabaseConfigured()) {
+      console.warn('Supabase não está configurado. Usando resposta simulada.');
+      const mockResponse = await mockAIResponse(model, messages);
+      
+      // Salvar mensagens localmente
+      const userMessage = messages[messages.length - 1];
+      
+      // Registrar no console para fins de desenvolvimento
+      console.log("Mensagem do usuário:", userMessage.content);
+      console.log("Resposta da IA:", mockResponse);
+      
+      return mockResponse;
+    }
+    
     // Format messages for the API
     const formattedMessages = messages.map(msg => ({
       role: msg.role,

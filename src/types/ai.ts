@@ -1,4 +1,3 @@
-
 export interface AIModel {
   id: string;
   name: string;
@@ -19,7 +18,7 @@ export interface Message {
 }
 
 export interface ApiKeys {
-  [provider: string]: string | boolean;
+  [provider: string]: boolean;
 }
 
 export const availableModels: AIModel[] = [
